@@ -11,10 +11,7 @@
 - $\rho : \Sigma \to \text{Context}$ = 上下文渲染(含压缩/重置)
 - $\varepsilon : \Sigma \to {\text{continue}, \text{done}}$ = 终止判定
 
-那么 harness 就是这一个不动点循环:
 
-$$H(\sigma) = \begin{cases} \sigma & \text{if } \varepsilon(\sigma) = \text{done} \ H(\sigma \oplus {M(\rho(\sigma))} \oplus \text{exec}(\pi(M(\rho(\sigma))))) & \text{otherwise} \end{cases}$$
-这里的 $\oplus$ **不是异或（XOR）**，是**事件流追加（append）**。
 **这个式子就是全部**。所有博客里讲的初始化 agent、context reset、generator/evaluator、并行 git 协作,全部是对 $\langle \mathcal{T}, \rho, \pi, \varepsilon \rangle$ 四元组的特化。
 
 
