@@ -1,6 +1,61 @@
+## Harness Agent 的最小形式化
+
+我把 Anthropic 那几篇博客压成一个定义:
+
+设:
+
+- $\Sigma$ = 会话状态(append-only 事件流)
+- $\mathcal{T} = {t_i : \text{Args}_i \to \text{Result}_i}$ = 工具集
+- $M : \text{Context} \to \text{Response}$ = 模型调用
+- $\pi : \text{Response} \to (\text{ToolCall}^* \cup \text{Halt})$ = 响应解析
+- $\rho : \Sigma \to \text{Context}$ = 上下文渲染(含压缩/重置)
+- $\varepsilon : \Sigma \to {\text{continue}, \text{done}}$ = 终止判定
+
+那么 harness 就是这一个不动点循环:
+
+$$H(\sigma) = \begin{cases} \sigma & \text{if } \varepsilon(\sigma) = \text{done} \ H(\sigma \oplus {M(\rho(\sigma))} \oplus \text{exec}(\pi(M(\rho(\sigma))))) & \text{otherwise} \end{cases}$$
+这里的 $\oplus$ **不是异或（XOR）**，是**事件流追加（append）**。
+**这个式子就是全部**。所有博客里讲的初始化 agent、context reset、generator/evaluator、并行 git 协作,全部是对 $\langle \mathcal{T}, \rho, \pi, \varepsilon \rangle$ 四元组的特化。
+
+
+---
+
+## 式子语义还原
+
+$\Sigma$ 被定义为 append-only 事件流，类比一个只能往后写的日志数组：
+
+```
+σ = [event_0, event_1, event_2, ...]
+```
+
+所以 $\sigma \oplus x$ 的意思是：**把 x 追加到这个流的末尾，得到新的流**。
+
+$$\sigma \oplus {e} = [event_0, ..., event_n, e]$$
+
+---
+
+## 拆解整个式子
+
+$$H(\sigma \oplus {M(\rho(\sigma))} \oplus \text{exec}(\pi(M(\rho(\sigma)))))$$
+
+从内到外读：
+
+|表达式|含义|
+|---|---|
+|$\rho(\sigma)$|把当前事件流渲染成模型的 context（即拼 prompt）|
+|$M(\rho(\sigma))$|调用模型，得到 response|
+|$\sigma \oplus {M(\cdot)}$|把这条 response 追加进流|
+|$\pi(M(\cdot))$|解析 response，得到要执行的 tool_call 列表（或 Halt）|
+|$\text{exec}(\pi(\cdot))$|执行这些工具，得到结果事件|
+|$\sigma \oplus {\cdot} \oplus \text{exec}(\cdot)$|把 response + 工具结果都追加进流|
+|$H(\sigma')$|用新流递归继续|
+
+
+
 # H1 - 第一阶段极简AI Agent原型
 
 这是我的第一阶段AI Agent探索成果，一个能让大模型自主调用Shell命令完成任务的极简原型实现。
+
 
 ## 📖 项目介绍
 
